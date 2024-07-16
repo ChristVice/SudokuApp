@@ -20,9 +20,20 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+
+        Button testButton = findViewById(R.id.testButton);
+        testButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runTestMethod();
+            }
+        });
     }
 
-    public static void testingMethod(){
-        System.out.println("This is a test of my method");
-    }
+    private void runTestMethod() {
+        System.out.println("This is test");
+        // Optional: Show a toast message for visual confirmation in the app
+        Toast.makeText(this, "This is test", Toast.LENGTH_SHORT).show();
+    }
 }
