@@ -7,6 +7,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -22,19 +25,23 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+        EditText userTxt = findViewById(R.id.inputText);
         Button testButton = findViewById(R.id.testButton);
         testButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 runTestMethod();
+                printUserText(userTxt.getText().toString());
             }
         });
     }
 
     private void runTestMethod() {
         System.out.println("This is test");
-        // Optional: Show a toast message for visual confirmation in the app
-        Toast.makeText(this, "This is test", Toast.LENGTH_SHORT).show();
+    }
+
+    private void printUserText(String userTxt) {
+        System.out.println(userTxt);
     }
 
 }
