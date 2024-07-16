@@ -28,12 +28,13 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 runTestMethod();
             }
-        });
+        });
     }
 
     private void runTestMethod() {
         System.out.println("This is test");
         // Optional: Show a toast message for visual confirmation in the app
         Toast.makeText(this, "This is test", Toast.LENGTH_SHORT).show();
-    }
+    }
+
 }
