@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="cell_size">55dp</dimen>
+    <dimen name="cell_margin">2dp</dimen>
+    <dimen name="grid_padding">0dp</dimen>
+</resources>
