@@ -1,8 +1,13 @@
 package com.example.sudokuapp;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -16,11 +21,21 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "SudokuApp Debug";
     private Random random = new Random();
 
+    //colors
+    private final String activeBkgColor = "#FFFFFF";
+    private final String emptyCellBkgColor = "#EDEFF6";
+    private final String concreteCellBkgColor = "#D8DDF0";
+    private final String errorCellTextColor = "#FB807C";
+
+
     private TextView activeTextView;
+    private List<Integer> concreteCells = new ArrayList<>();
 
     private int[][] appGameMatrix;
     int[][] sudokuPuzzle;
@@ -53,11 +68,33 @@ public class MainActivity extends AppCompatActivity {
                 R.id.number7, R.id.number8, R.id.number9
         };
 
+        View.OnFocusChangeListener cellFocusListener = new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                int bkgColor = getBackgroundColor((TextView) v); // Example integer value
+                String hexString = String.format("#%06X", (0xFFFFFF & bkgColor));
+
+                //if bkg is not concrete cell, change active bkg color
+                if(!hexString.equals(concreteCellBkgColor)){
+                    if (hasFocus) {
+
+                        // Change the background color when the TextView gains focus
+                        v.setBackgroundColor(Color.parseColor(activeBkgColor));
+                    } else {
+                        // Revert the background color when the TextView loses focus
+                        v.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
+                    }
+                }
+            }
+        };
+
         // Set click listeners on TextViews to update the active TextView
         View.OnClickListener cellClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 activeTextView = (TextView) v;
+                activeTextView.requestFocus();
+
             }
         };
 
@@ -65,15 +102,18 @@ public class MainActivity extends AppCompatActivity {
         for (int[] matrix : appGameMatrix) {
             for (int cellID : matrix) {
                 findViewById(cellID).setOnClickListener(cellClickListener);
+                findViewById(cellID).setOnFocusChangeListener(cellFocusListener);
             }
         }
 
+        //creates the starting board along with concrete numbers
+        createRandomSudokuStartingBoard();
 
         // Set click listeners on buttons to update the text of the active TextView
         View.OnClickListener buttonClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (activeTextView != null) {
+                if (activeTextView != null && !concreteCells.contains(activeTextView.getId())) {
                     Button clickedButton = (Button) v;
                     String buttonText = clickedButton.getText().toString();
 
@@ -92,11 +132,12 @@ public class MainActivity extends AppCompatActivity {
             findViewById(id).setOnClickListener(buttonClickListener);
         }
 
-        createRandomSudokuStartingBoard();
     }
     
     private void createRandomSudokuStartingBoard(){
         int difficultyLevel = 20; // Number of cells to remove for the puzzle
+
+        //make a puzzle board that we will use to run methods on
         sudokuPuzzle = sudokuGame.createSudokuPuzzle(difficultyLevel);
 
         Log.d(TAG, "");
@@ -108,15 +149,15 @@ public class MainActivity extends AppCompatActivity {
     private void setStartingCells(int[][] startingValues){
         for(int i=0; i<appGameMatrix.length; i++){
             for(int j=0; j<appGameMatrix[i].length; j++){
-
                 int cellID = appGameMatrix[i][j];
                 TextView cellView = findViewById(cellID);
                 if(cellView != null){
                     int startValue = startingValues[i][j];
                     String value = String.valueOf(startValue);
                     if(startValue != 0){
+                        //add number to app board, add cellID to concreteCells, and set its styling
                         cellView.setText(value);
-                        //cellView.setTextAppearance(R.style.FilledCellStyle);
+                        concreteCells.add(cellID); //add cellID to cells that should not change
                         cellView.setBackgroundColor(Color.parseColor("#D8DDF0"));
                     }
                 }
@@ -128,24 +169,79 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void setUserInputToBoard(int userNum){
-        Log.d(TAG, "User input number: " + userNum);
         for(int i=0; i<appGameMatrix.length; i++){
             for(int j=0; j<appGameMatrix[i].length; j++){
 
                 int cellID = appGameMatrix[i][j];
                 TextView cellView = findViewById(cellID);
                 if(cellView == activeTextView){
+
+                    //get user input and add it to sudokuPuzzle board
                     int userValue = Integer.parseInt(cellView.getText().toString());
                     SudokuMaker.setValue(sudokuPuzzle, userValue, i, j);
                     SudokuMaker.printBoard(sudokuPuzzle);
-                    Log.d(TAG,"Solved :: "+SudokuMaker.isPuzzleSolved(sudokuPuzzle));
+
+                    //check if the input is valid, and highlight where errors are
+                    List<int[]> errors = SudokuMaker.findErrorIntersects(sudokuPuzzle, userValue, i, j);
+                    highlightInputIntersects(errors);
+
                 }
             }
+
+        }
+        return;
+    }
+
+    private void highlightInputIntersects(List<int[]> errorCoordinates){
+        String repeats = listToString(errorCoordinates);
+        Log.d(TAG, repeats);
+
+        for (int[] point: errorCoordinates) {
+            int errorCellID = appGameMatrix[point[0]][point[1]];
+
+            //attached cellView from the cellID
+            TextView errorCellView = findViewById(errorCellID);
+            int copyBkgColor = getBackgroundColor(errorCellView);
+            Log.d(TAG, "active isfocused:: "+activeTextView.isFocused());
+            if (activeTextView.isFocused()) {
+                errorCellView.setTextColor(Color.parseColor(errorCellTextColor)); // Highlight color
+            }
+            Log.d(TAG, "bkgColor:: "+copyBkgColor);
 
         }
 
 
         return;
+    }
+
+    private void eraseUserInput() {
+        return ;
+    }
+
+    private int getBackgroundColor(TextView textView) {
+        Drawable background = textView.getBackground();
+        if (background instanceof ColorDrawable) {
+            return ((ColorDrawable) background).getColor();
+        }
+
+        return Color.TRANSPARENT; // Default color if background is not a ColorDrawable
+    }
+
+    public static String listToString(List<int[]> list) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(":");
+
+        for (int i = 0; i < list.size(); i++) {
+            int[] array = list.get(i);
+            sb.append(Arrays.toString(array));
+
+            if (i < list.size() - 1) {
+                sb.append(", ");
+            }
+        }
+
+        sb.append(":");
+        return sb.toString();
     }
 
 }

@@ -41,6 +41,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="#FFFFFF"
+                android:layout_marginEnd="2dp"
+                android:layout_marginBottom="2dp"
                 >
             <GridLayout
                 android:id="@+id/top_left"
@@ -50,10 +52,6 @@
                 <!-- Add 9 TextViews here -->
                 <TextView
                     android:id="@+id/cell_1"
-                    android:layout_width="@dimen/cell_size"
-                    android:layout_height="@dimen/cell_size"
-                    android:layout_margin="2dp"
-                    android:gravity="center"
                     android:text=""
                     style="@style/SudokuCellStyle" />
 

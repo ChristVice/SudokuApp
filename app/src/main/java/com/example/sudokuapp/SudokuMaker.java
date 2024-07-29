@@ -1,5 +1,8 @@
 package com.example.sudokuapp;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -13,14 +16,20 @@ public class SudokuMaker {
     private Random random = new Random();
 
     private boolean isValid(int row, int col, int num) {
+        //checks rows and col
         for (int x = 0; x < SIZE; x++) {
             if (board[row][x] == num || board[x][col] == num) {
                 return false;
             }
         }
 
-        int startRow = row / SUBGRID_ROWS * SUBGRID_ROWS;
-        int startCol = col / SUBGRID_COLS * SUBGRID_COLS;
+
+        //checks subgrid
+        //need to check this algo, returning invalid subgrid
+        int startRow = (row / SUBGRID_ROWS) * SUBGRID_ROWS;
+        int startCol = (col / SUBGRID_COLS) * SUBGRID_COLS;
+        startRow = (row / 2) * 2;
+        startCol = (col / 3) * 3;
         for (int i = 0; i < SUBGRID_ROWS; i++) {
             for (int j = 0; j < SUBGRID_COLS; j++) {
                 if (board[startRow + i][startCol + j] == num) {
@@ -65,6 +74,7 @@ public class SudokuMaker {
     }
 
     public int[][] createSudokuPuzzle(int difficulty) {
+        //need to redo, sets same numbers within subgrid
         board = new int[SIZE][SIZE];
         fillBoard();
         printBoard(board);
@@ -81,12 +91,73 @@ public class SudokuMaker {
         }
     }
 
-    public static void setValue(int[][] puzzle, int value, int x, int y){
-        puzzle[x][y] = value;
+    public static void setValue(int[][] puzzle, int value, int row, int col){
+        puzzle[row][col] = value;
         return;
     }
 
+    private static boolean isCoordinateUnique(List<int[]> list, int[] coordinate){
+        //go through each point in the list
+        for (int[] point: list) {
+            //if the coordinate finds a point that is same arr, return false
+            if(point[0] == coordinate[0] && point[1] == coordinate[1]) return false;
+        }
+
+        return true;
+    }
+
+    public static List<int[]> findErrorIntersects(int[][] puzzle, int inputNum, int row, int col){
+        List<int[]> numErrors = new ArrayList<>();
+
+        //checks both rows and col same time
+        int[] userInputCoordinates = new int[]{row, col};
+        for (int x = 0; x < puzzle.length; x++) {
+            //checks the col
+            if(puzzle[row][x] == inputNum){
+                int[] coordinate = new int[]{row,x};
+
+                //if coordinate does not matches user input coord, add it
+                if(!Arrays.equals(coordinate, userInputCoordinates)) {
+                    numErrors.add(coordinate);
+                }
+            }
+
+            //checks the rows
+            if(puzzle[x][col] == inputNum){
+                int[] coordinate = new int[]{x,col};
+                //if coordinate does not matches user input coord, add it
+                if(!Arrays.equals(coordinate, userInputCoordinates)) {
+                    numErrors.add(coordinate);
+                }
+            }
+        }
+
+        //check its subgrid
+        int subgridRowStart = (row / 3) * 3;
+        int subgridColStart = (col / 3) * 3;
+
+        for (int i = subgridRowStart; i < subgridRowStart + 3; i++) {
+            for (int j = subgridColStart; j < subgridColStart + 3; j++) {
+                //if point in i,j matches the number inputted
+                if (puzzle[i][j] == inputNum) {
+                    // If coordinate match user input coord, skip
+                    if (i == row && j == col) continue;
+
+                    int[] coordinate = new int[]{i, j};
+                    //dont add duplicates
+                    if(isCoordinateUnique(numErrors, coordinate)) {
+                        numErrors.add(coordinate);
+                    }
+                }
+            }
+        }
+
+        return numErrors;
+    }
+
+
     public static boolean isPuzzleSolved(int[][] puzzle){
+
         // Check each row
         for (int row = 0; row < SIZE; row++) {
             Set<Integer> rowSet = new HashSet<>();
