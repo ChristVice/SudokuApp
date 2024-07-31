@@ -3,7 +3,6 @@ package com.example.sudokuapp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -14,6 +13,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -21,7 +21,6 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "SudokuApp Debug";
-    private Random random = new Random();
 
     //colors
     private final String activeBkgColor = "#FFFFFF";
@@ -29,14 +28,14 @@ public class MainActivity extends AppCompatActivity {
     private final String cellHighlightColor = "#D8DDF0";
     private final String errorTextColor = "#FB807C";
     private final String userInputTextColor = "#3CB9FF";
+    private final String regularTextColor = "#9198B5";
 
 
     private TextView activeTextView;
-    private List<Integer> concreteCells = new ArrayList<>();
+    private List<Integer> concreteCellsID = new ArrayList<>();
 
     private int[][] appGameMatrix;
     int[][] sudokuPuzzle;
-    SudokuMaker sudokuGame = new SudokuMaker();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,32 +63,30 @@ public class MainActivity extends AppCompatActivity {
                 R.id.number7, R.id.number8, R.id.number9
         };
 
-        View.OnFocusChangeListener cellFocusListener = new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (hasFocus) {
-                    // Change the background color when the TextView gains focus
-                    v.setBackgroundColor(Color.parseColor(activeBkgColor));
-                    highlightRowAndColumn((TextView) v);
-                } else {
-                    // Revert the background color when the TextView loses focus
-                    v.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
-                    unhighlightRowAndColumn((TextView) v);
-                }
+        View.OnFocusChangeListener cellFocusListener = (v, hasFocus) -> {
+            if (hasFocus) {
+                activeTextView = (TextView) v;
+                // Change the background color when the TextView gains focus
+                v.setBackgroundColor(Color.parseColor(activeBkgColor));
+                //highlightRowAndColumn((TextView) v);
+                highlightRowAndColumn(activeTextView);
+            } else {
+
+                activeTextView = null;
+                // Revert the background color when the TextView loses focus
+                v.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
+                unhighlightRowAndColumn((TextView) v);
             }
         };
 
         // Set click listeners on TextViews to update the active TextView
-        View.OnClickListener cellClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (activeTextView != null) {
-                    // Remove focus from the previously active TextView
-                    activeTextView.clearFocus();
-                }
-                activeTextView = (TextView) v;
-                activeTextView.requestFocus();
+        View.OnClickListener cellClickListener = v -> {
+            if (activeTextView != null) {
+                // Remove focus from the previously active TextView
+                activeTextView.clearFocus();
             }
+            TextView currentTextView = (TextView) v;
+            currentTextView.requestFocus();
         };
 
         for (int[] matrix : appGameMatrix) {
@@ -103,28 +100,26 @@ public class MainActivity extends AppCompatActivity {
         createRandomSudokuStartingBoard();
 
         // Set click listeners on buttons to update the text on the active TextView
-        View.OnClickListener buttonClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (activeTextView != null && !concreteCells.contains(activeTextView.getId())) {
-                    Button clickedButton = (Button) v;
-                    String buttonText = clickedButton.getText().toString();
+        View.OnClickListener buttonClickListener = v -> {
+            if (activeTextView != null && !concreteCellsID.contains(activeTextView.getId())) {
+                Button clickedButton = (Button) v;
+                String buttonText = clickedButton.getText().toString();
 
-                    try {
-                        int number = Integer.parseInt(buttonText); // Ensure the button text is a valid integer
+                try {
+                    int number = Integer.parseInt(buttonText); // Ensure the button text is a valid integer
 
-                        // Set the cell to button number, change its color, and update the puzzle board
-                        activeTextView.setText(buttonText);
-                        activeTextView.setTextColor(Color.parseColor(userInputTextColor));
-                        setUserInputToBoard(number);
+                    // Set the cell to button number, change its color, and update the puzzle board
+                    activeTextView.setText(buttonText);
+                    activeTextView.setTextColor(Color.parseColor(userInputTextColor));
+                    setUserInputToBoard(number);
+                    highlightRowAndColumn(activeTextView);
 
-                        if (SudokuMaker.isPuzzleSolved(sudokuPuzzle)) {
-                            Log.d(TAG, "Puzzle is solved!");
-                        }
-
-                    } catch (NumberFormatException e) {
-                        Log.d("Invalid input :: ", buttonText);
+                    if (SudokuMaker.isPuzzleSolved(sudokuPuzzle)) {
+                        Log.d(TAG, "Puzzle is solved!");
                     }
+
+                } catch (NumberFormatException e) {
+                    Log.d("Invalid input :: ", buttonText);
                 }
             }
         };
@@ -133,15 +128,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Get the delete button and set the click listener
-        View.OnClickListener deleteButtonClickListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, "delete button clicked");
+        View.OnClickListener deleteButtonClickListener = v -> {
+            Log.d(TAG, "delete button clicked");
 
-                // If active not a concrete, enable eraser
-                if (!concreteCells.contains(activeTextView.getId()))
-                    eraseUserInput();
-            }
+            // If active not a concrete, enable eraser
+            if (!concreteCellsID.contains(activeTextView.getId()))
+                eraseUserInput();
         };
         findViewById(R.id.delete_num_button).setOnClickListener(deleteButtonClickListener);
     }
@@ -150,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
         int difficultyLevel = 20; // Number of cells to remove for the puzzle
 
         // Make a puzzle board that we will use to run methods on
+        SudokuMaker sudokuGame = new SudokuMaker();
         sudokuPuzzle = sudokuGame.createSudokuPuzzle(difficultyLevel);
 
         Log.d(TAG, "");
@@ -166,9 +159,9 @@ public class MainActivity extends AppCompatActivity {
                     int startValue = startingValues[i][j];
                     String value = String.valueOf(startValue);
                     if (startValue != 0) {
-                        // Add number to app board, add cellID to concreteCells, and set its styling
+                        // Add number to app board, add cellID to concreteCellsID, and set its styling
                         cellView.setText(value);
-                        concreteCells.add(cellID); // Add cellID to cells that should not change
+                        concreteCellsID.add(cellID); // Add cellID to cells that should not change
                         String concreteTxtColor = "#9198B5";
                         cellView.setTextColor(Color.parseColor(concreteTxtColor));
                         cellView.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
@@ -178,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     private void setUserInputToBoard(int userNum) {
         for (int i = 0; i < appGameMatrix.length; i++) {
             for (int j = 0; j < appGameMatrix[i].length; j++) {
@@ -185,66 +179,127 @@ public class MainActivity extends AppCompatActivity {
                 TextView cellView = findViewById(cellID);
                 if (cellView == activeTextView) {
                     // Get user input and add it to sudokuPuzzle board
-                    int userValue = Integer.parseInt(cellView.getText().toString());
-                    SudokuMaker.setValue(sudokuPuzzle, userValue, i, j);
+                    SudokuMaker.setValue(sudokuPuzzle, userNum, i, j);
                     SudokuMaker.printBoard(sudokuPuzzle);
                 }
             }
         }
     }
 
+    private void highlightRowAndColumn(TextView currentTextView) {
+        int row = appGameMatrix.length;
+        int col = appGameMatrix[0].length;
+        int[] activePoint = getActiveCoordinate(currentTextView);
+        String currentViewNumber = (String) currentTextView.getText();
 
-    /*
-    private void highlightInputIntersects(List<int[]> errorCoordinates) {
-        String repeats = listToString(errorCoordinates);
-        Log.d(TAG, repeats);
+        for (int x = 0; x < appGameMatrix.length; x++) {
+            TextView rowView = findViewById(appGameMatrix[activePoint[0]][x]);
+            TextView colView = findViewById(appGameMatrix[x][activePoint[1]]);
 
-        for (int[] point : errorCoordinates) {
-            int errorCellID = appGameMatrix[point[0]][point[1]];
+            if(rowView != currentTextView){
+                String rowViewNumber = (String) rowView.getText();
+                rowView.setBackgroundColor(Color.parseColor(cellHighlightColor));
 
-            // Attached cellView from the cellID
-            TextView errorCellView = findViewById(errorCellID);
-            if (errorCellView != null) {
-                if (activeTextView.isFocused()) {
-                    errorCellView.setTextColor(Color.parseColor(errorCellTextColor)); // Highlight color
+                //make sure currentNum and rowNum are not "", then check if they equal
+                if((!currentViewNumber.isEmpty() || !rowViewNumber.isEmpty()) && currentViewNumber.equals(rowViewNumber)){
+
+                    //highlight row num that is equal, turn text red
+                    rowView.setTextColor(Color.parseColor(errorTextColor));
+                }
+            }
+            if(colView != currentTextView){
+                String colViewNumber = (String) colView.getText();
+                colView.setBackgroundColor(Color.parseColor(cellHighlightColor));
+
+                //make sure currentNum and rowNum are not "", then check if they equal
+                if((!currentViewNumber.isEmpty() || !colViewNumber.isEmpty()) && currentViewNumber.equals(colViewNumber)){
+                    colView.setTextColor(Color.parseColor(errorTextColor));
                 }
             }
         }
-    }
-     */
 
-    private void highlightRowAndColumn(TextView currentTextView) {
-        int[] activePoint = getActiveCoordinate(currentTextView);
 
-        for (int x = 0; x < appGameMatrix.length; x++) {
-            TextView row = findViewById(appGameMatrix[activePoint[0]][x]);
-            TextView col = findViewById(appGameMatrix[x][activePoint[1]]);
+        /*
+        //check its subgrid
+        int subgridRowStart = (row / 3) * 3;
+        int subgridColStart = (col / 3) * 3;
 
-            if(row != currentTextView || col != currentTextView){
-                row.setBackgroundColor(Color.parseColor(cellHighlightColor));
-                col.setBackgroundColor(Color.parseColor(cellHighlightColor));
+        for (int i = subgridRowStart; i < subgridRowStart + 3; i++) {
+            for (int j = subgridColStart; j < subgridColStart + 3; j++) {
+                int cellID = appGameMatrix[i][j];
+                TextView cellView = findViewById(cellID);
+
+                cellView.setBackgroundColor(Color.parseColor(cellHighlightColor));
             }
         }
 
-        //highlight the currentView
-        currentTextView.setBackgroundColor(Color.parseColor(activeBkgColor));
+         */
+
     }
 
     private void unhighlightRowAndColumn(TextView currentTextView) {
+        int row = appGameMatrix.length;
+        int col = appGameMatrix[0].length;
         int[] activePoint = getActiveCoordinate(currentTextView);
+        String currentViewNumber = (String) currentTextView.getText();
 
         for (int x = 0; x < appGameMatrix.length; x++) {
-            TextView row = findViewById(appGameMatrix[activePoint[0]][x]);
-            TextView col = findViewById(appGameMatrix[x][activePoint[1]]);
+            int rowID = appGameMatrix[activePoint[0]][x];
+            int colID = appGameMatrix[x][activePoint[1]];
 
-            if(row != currentTextView || col != currentTextView){
-                row.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
-                col.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
+            TextView rowView = findViewById(rowID);
+            TextView colView = findViewById(colID);
+
+            if(rowView != currentTextView){
+                String rowViewNumber = (String) rowView.getText();
+                rowView.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
+
+                //make sure currentNum and rowNum are not "", then check if they equal
+                if((!currentViewNumber.isEmpty() || !rowViewNumber.isEmpty()) && currentViewNumber.equals(rowViewNumber)){
+
+                    //highlight row num that is equal, turn text red
+                    if(concreteCellsID.contains(rowID)){
+                        rowView.setTextColor(Color.parseColor(regularTextColor));
+                    }
+                    else{
+                        rowView.setTextColor(Color.parseColor(userInputTextColor));
+                    }
+                }
+            }
+            if(colView != currentTextView){
+                String colViewNumber = (String) colView.getText();
+                colView.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
+
+                //make sure currentNum and rowNum are not "", then check if they equal
+                if((!currentViewNumber.isEmpty() || !colViewNumber.isEmpty()) && currentViewNumber.equals(colViewNumber)){
+                    if(concreteCellsID.contains(colID)){
+                        colView.setTextColor(Color.parseColor(regularTextColor));
+                    }
+                    else{
+                        colView.setTextColor(Color.parseColor(userInputTextColor));
+                    }
+                }
             }
         }
 
-        //unhighlight the currentView
-        currentTextView.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
+        /*
+
+        //check its subgrid
+        int subgridRowStart = (row / 3) * 3;
+        int subgridColStart = (col / 3) * 3;
+
+        for (int i = subgridRowStart; i < subgridRowStart + 3; i++) {
+            for (int j = subgridColStart; j < subgridColStart + 3; j++) {
+                Log.d(TAG, i+" :: "+j);
+                int cellID = appGameMatrix[i][j];
+                TextView cellView = findViewById(cellID);
+
+                cellView.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
+            }
+        }
+
+        */
+
     }
 
     private int[] getActiveCoordinate(TextView currentTextView) {
@@ -261,9 +316,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void eraseUserInput() {
-        if (activeTextView != null) {
+        /*
+        activeView has something that is not "",
+            remove highlight,
+            set to 0 in class board,
+            text, and color,
+            then set null
+         */
+        if (activeTextView != null && !TextUtils.isEmpty(activeTextView.getText())) {
+            unhighlightRowAndColumn(activeTextView);
+            setUserInputToBoard(0);
             activeTextView.setText("");
+            activeTextView.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
+            activeTextView = null;
         }
+
     }
 
     public static String listToString(List<int[]> list) {
