@@ -194,6 +194,7 @@ public class MainActivity extends AppCompatActivity {
         int[] activePoint = getActiveCoordinate(currentTextView);
         String currentViewNumber = currentTextView.getText().toString();
 
+        //highlight the row and col
         for (int x = 0; x < appGameMatrix.length; x++) {
             TextView rowView = findViewById(appGameMatrix[activePoint[0]][x]);
             TextView colView = findViewById(appGameMatrix[x][activePoint[1]]);
@@ -226,6 +227,39 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+
+
+        // Highlight the subgrid
+        int subgridRowStart = (activePoint[0] / 2) * 2;
+        int subgridColStart = (activePoint[1] / 3) * 3;
+
+        for (int i = subgridRowStart; i < subgridRowStart + 2; i++) {
+            for (int j = subgridColStart; j < subgridColStart + 3; j++) {
+                TextView subgridView = findViewById(appGameMatrix[i][j]);
+
+                if (subgridView != currentTextView) {
+                    subgridView.setBackgroundColor(Color.parseColor(cellHighlightColor));
+                    String subgridViewNumber = subgridView.getText().toString();
+
+                    if (!subgridViewNumber.isEmpty() && subgridViewNumber.equals(currentViewNumber)) {
+                        subgridView.setTextColor(Color.parseColor(errorTextColor));
+                    } else {
+                        if (concreteCellsID.contains(subgridView.getId())) {
+                            subgridView.setTextColor(Color.parseColor(regularTextColor));
+                        } else {
+                            subgridView.setTextColor(Color.parseColor(userInputTextColor));
+                        }
+                    }
+
+                }
+
+            }
+        }
+
+
+
+
+        return;
     }
 
 

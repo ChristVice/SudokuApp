@@ -28,8 +28,6 @@ public class SudokuMaker {
         //need to check this algo, returning invalid subgrid
         int startRow = (row / SUBGRID_ROWS) * SUBGRID_ROWS;
         int startCol = (col / SUBGRID_COLS) * SUBGRID_COLS;
-        startRow = (row / 2) * 2;
-        startCol = (col / 3) * 3;
         for (int i = 0; i < SUBGRID_ROWS; i++) {
             for (int j = 0; j < SUBGRID_COLS; j++) {
                 if (board[startRow + i][startCol + j] == num) {
