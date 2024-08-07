@@ -1,9 +1,11 @@
 package com.example.sudokuapp;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import android.os.Handler;
 import java.util.List;
+import java.util.Locale;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
@@ -11,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -18,6 +21,13 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "SudokuApp Debug";
+    private final int difficultyLevel = 10; // Number of cells to remove for the puzzle
+
+    //private TextView timerTextView ;
+    private int secondsPassed = 0;
+    private final Handler handler = new Handler();
+    private Runnable runnable;
+    private boolean isTimerRunning = false;
 
     //colors
     private final String activeBkgColor = "#FFFFFF";
@@ -44,6 +54,14 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        //timer functions
+        TextView timerTextView = findViewById(R.id.timerTextView);
+        Button startStopButton = findViewById(R.id.startButton);
+
+        startStopButton.setOnClickListener(v -> startStopTimer(timerTextView, startStopButton));
+
+
+        //game matrix
         appGameMatrix = new int[][]{
                 {R.id.cell_1, R.id.cell_2, R.id.cell_3, R.id.cell_4, R.id.cell_5, R.id.cell_6},
                 {R.id.cell_7, R.id.cell_8, R.id.cell_9, R.id.cell_10, R.id.cell_11, R.id.cell_12},
@@ -56,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
         int[] buttonIds = {
                 R.id.number1, R.id.number2, R.id.number3,
                 R.id.number4, R.id.number5, R.id.number6,
-                R.id.number7, R.id.number8, R.id.number9
+                //numbers should not be avail for 6x6 grid
+                //R.id.number7, R.id.number8, R.id.number9
         };
 
         View.OnFocusChangeListener cellFocusListener = (v, hasFocus) -> {
@@ -111,7 +130,13 @@ public class MainActivity extends AppCompatActivity {
                     highlightRowAndColumn(activeTextView);
 
                     if (SudokuMaker.isPuzzleSolved(sudokuPuzzle)) {
+                        stopTimer();
+
                         Log.d(TAG, "Puzzle is solved!");
+                        Intent intent = new Intent(MainActivity.this, finishedgame.class);
+                        intent.putExtra("Time Spent", secondsPassed);
+                        startActivity(intent);
+
                     }
 
                 } catch (NumberFormatException e) {
@@ -132,12 +157,13 @@ public class MainActivity extends AppCompatActivity {
                 eraseUserInput();
         };
         findViewById(R.id.delete_num_button).setOnClickListener(deleteButtonClickListener);
+
+
+
     }
 
 
     private void createRandomSudokuStartingBoard() {
-        int difficultyLevel = 20; // Number of cells to remove for the puzzle
-
         // Make a puzzle board that we will use to run methods on
         SudokuMaker sudokuGame = new SudokuMaker();
         sudokuPuzzle = sudokuGame.createSudokuPuzzle(difficultyLevel);
@@ -265,6 +291,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void unhighlightRowAndColumn(TextView currentTextView) {
         int[] activePoint = getActiveCoordinate(currentTextView);
+        String currentViewNumber = currentTextView.getText().toString();
 
         for (int x = 0; x < appGameMatrix.length; x++) {
             int rowID = appGameMatrix[activePoint[0]][x];
@@ -291,6 +318,31 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+
+
+
+        // Highlight the subgrid
+        int subgridRowStart = (activePoint[0] / 2) * 2;
+        int subgridColStart = (activePoint[1] / 3) * 3;
+
+        for (int i = subgridRowStart; i < subgridRowStart + 2; i++) {
+            for (int j = subgridColStart; j < subgridColStart + 3; j++) {
+                TextView subgridView = findViewById(appGameMatrix[i][j]);
+
+                if (subgridView != currentTextView) {
+                    subgridView.setBackgroundColor(Color.parseColor(emptyCellBkgColor));
+
+                    if (concreteCellsID.contains(subgridView.getId())) {
+                        subgridView.setTextColor(Color.parseColor(regularTextColor));
+                    } else {
+                        subgridView.setTextColor(Color.parseColor(userInputTextColor));
+                    }
+                }
+
+
+            }
+        }
+
     }
 
 
@@ -316,21 +368,46 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void startStopTimer(TextView timerTextView, Button startStopButton) {
 
-    public static String listToString(List<int[]> list) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(":");
+        //if timer is running and user stops it, or 30 min has reached
+        if (isTimerRunning || secondsPassed==1800 ) {
+            stopTimer();
+            startStopButton.setText("Start Timer");
 
-        for (int i = 0; i < list.size(); i++) {
-            int[] array = list.get(i);
-            sb.append(Arrays.toString(array));
-
-            if (i < list.size() - 1) {
-                sb.append(", ");
-            }
+            Log.d(TAG, "timer stopped now moving to finished game screen with time :: "+secondsPassed);
+            Intent intent = new Intent(MainActivity.this, finishedgame.class);
+            intent.putExtra("Time Spent", secondsPassed);
+            startActivity(intent);
+        } else {
+            startTimer(timerTextView);
+            startStopButton.setText("Stop Timer");
         }
+        isTimerRunning = !isTimerRunning;
+    }
 
-        sb.append(":");
-        return sb.toString();
+    private void startTimer(TextView timerTextView) {
+        secondsPassed = 0;
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                int minutes = secondsPassed / 60;
+                int seconds = secondsPassed % 60;
+                timerTextView.setText(String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds));
+                secondsPassed++;
+                handler.postDelayed(this, 1000); // Schedule the runnable to run again after 1 second
+            }
+        };
+        handler.post(runnable); // Start the timer
+    }
+
+    private void stopTimer() {
+        handler.removeCallbacks(runnable); // Stop the timer
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopTimer();
     }
 }
