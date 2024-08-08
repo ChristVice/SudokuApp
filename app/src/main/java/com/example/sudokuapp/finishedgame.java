@@ -12,6 +12,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
 public class finishedgame extends AppCompatActivity {
     private static final String TAG = "SudokuApp Debug";
 
@@ -30,11 +34,40 @@ public class finishedgame extends AppCompatActivity {
 
         //get the seconds
         Bundle extras = getIntent().getExtras();
-        int totalTimeSeconds = 0;
+        int totalTimeSeconds;
+        boolean didUserFinishGame, isMaxTimeReached;
 
         if (extras != null) {
             totalTimeSeconds = extras.getInt("Time Spent", 0); // Retrieve the integer value with a default of 0
+            didUserFinishGame = extras.getBoolean("UserFinishGame?", true);
+            isMaxTimeReached = extras.getBoolean("MaxTimeReached?", false);
+
             TextView textView = findViewById(R.id.time_took);
+            TextView titleGreetView = findViewById(R.id.title_greet);
+
+
+            if(isMaxTimeReached){
+                titleGreetView.setText("Time limit was reached");
+            }
+            //add motivational message if user choose to end game
+            else if(!didUserFinishGame){
+                List<String> messages = Arrays.asList(
+                        "Great effort! Every step counts.",
+                        "Keep going! You'll get it next time.",
+                        "Progress is progress. Well done!",
+                        "You're on the right track!",
+                        "Nice try! Practice makes perfect.",
+                        "Don't give up! You're improving.",
+                        "Good job! Each attempt makes you better.",
+                        "Well played! Keep challenging yourself.",
+                        "You're doing great! Persistence is key.",
+                        "Way to go! Keep up the good work."
+                );
+                Random random = new Random();
+                int randomIndex = random.nextInt(messages.size());
+
+                titleGreetView.setText(messages.get(randomIndex));
+            }
 
             //take seconds and convert into readable format
             String time = processTime(totalTimeSeconds);
@@ -45,7 +78,7 @@ public class finishedgame extends AppCompatActivity {
         //make button go back to game
         Button newGame = findViewById(R.id.new_game_bttn);
         newGame.setOnClickListener(view -> {
-            Intent intent = new Intent(finishedgame.this, MainActivity.class);
+            Intent intent = new Intent(finishedgame.this, difficultyselection.class);
             startActivity(intent);
         });
 

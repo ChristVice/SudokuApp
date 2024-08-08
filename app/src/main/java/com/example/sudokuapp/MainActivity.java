@@ -1,6 +1,8 @@
 package com.example.sudokuapp;
 
 import java.util.ArrayList;
+
+import android.nfc.Tag;
 import android.os.Handler;
 import java.util.List;
 import java.util.Locale;
@@ -21,13 +23,13 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "SudokuApp Debug";
-    private final int difficultyLevel = 10; // Number of cells to remove for the puzzle
+    private int difficultyLevel; // Number of cells to remove for the puzzle
 
     //private TextView timerTextView ;
     private int secondsPassed = 0;
+    private final int maxSecondsLimit = 40*60; //minutes * seconds
     private final Handler handler = new Handler();
     private Runnable runnable;
-    private boolean isTimerRunning = false;
 
     //colors
     private final String activeBkgColor = "#FFFFFF";
@@ -56,9 +58,15 @@ public class MainActivity extends AppCompatActivity {
 
         //timer functions
         TextView timerTextView = findViewById(R.id.timerTextView);
-        Button startStopButton = findViewById(R.id.startButton);
+        startTimer(timerTextView);
 
-        startStopButton.setOnClickListener(v -> startStopTimer(timerTextView, startStopButton));
+        Button stopTimerBttn = findViewById(R.id.stop_timer);
+
+        stopTimerBttn.setOnClickListener(view -> {
+
+            stopTimer();
+
+        });
 
 
         //game matrix
@@ -111,6 +119,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+
+        //get the difficulty level
+        Bundle extras = getIntent().getExtras();
+        if(extras != null){
+            difficultyLevel = extras.getInt("Selected Difficulty", 10); // Retrieve the integer value with a default of 0
+        }
         // Create the starting board along with concrete numbers
         createRandomSudokuStartingBoard();
 
@@ -148,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
             findViewById(id).setOnClickListener(buttonClickListener);
         }
 
+
         // Get the delete button and set the click listener
         View.OnClickListener deleteButtonClickListener = v -> {
             Log.d(TAG, "delete button clicked");
@@ -157,8 +172,6 @@ public class MainActivity extends AppCompatActivity {
                 eraseUserInput();
         };
         findViewById(R.id.delete_num_button).setOnClickListener(deleteButtonClickListener);
-
-
 
     }
 
@@ -283,8 +296,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-
-
         return;
     }
 
@@ -368,23 +379,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void startStopTimer(TextView timerTextView, Button startStopButton) {
-
-        //if timer is running and user stops it, or 30 min has reached
-        if (isTimerRunning || secondsPassed==1800 ) {
-            stopTimer();
-            startStopButton.setText("Start Timer");
-
-            Log.d(TAG, "timer stopped now moving to finished game screen with time :: "+secondsPassed);
-            Intent intent = new Intent(MainActivity.this, finishedgame.class);
-            intent.putExtra("Time Spent", secondsPassed);
-            startActivity(intent);
-        } else {
-            startTimer(timerTextView);
-            startStopButton.setText("Stop Timer");
-        }
-        isTimerRunning = !isTimerRunning;
-    }
 
     private void startTimer(TextView timerTextView) {
         secondsPassed = 0;
@@ -396,6 +390,11 @@ public class MainActivity extends AppCompatActivity {
                 timerTextView.setText(String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds));
                 secondsPassed++;
                 handler.postDelayed(this, 1000); // Schedule the runnable to run again after 1 second
+
+                // if max time reached, stop timer
+                if ( secondsPassed >= maxSecondsLimit+1 ) {
+                    stopTimer();
+                }
             }
         };
         handler.post(runnable); // Start the timer
@@ -403,6 +402,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopTimer() {
         handler.removeCallbacks(runnable); // Stop the timer
+
+        Intent intent = new Intent(MainActivity.this, finishedgame.class);
+        intent.putExtra("Time Spent", secondsPassed-1);
+        intent.putExtra("MaxTimeReached?", secondsPassed >= maxSecondsLimit+1);
+        intent.putExtra("UserFinishGame?", SudokuMaker.isPuzzleSolved(sudokuPuzzle));
+        startActivity(intent);
     }
 
     @Override

@@ -5,64 +5,58 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".finishedgame">
+    tools:context=".difficultyselection">
 
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="10dp"
-
         android:orientation="vertical"
         android:gravity="center"
         >
 
 
+
         <TextView
-            android:id="@+id/title_greet"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="You solved the puzzle!"
+            android:text="Choose level difficulty:"
             android:textSize="20dp"
-            android:layout_marginBottom="40dp"
             />
 
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="120dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:layout_marginBottom="40dp"
+            android:layout_marginTop="20dp"
             >
 
 
-            <TextView
-                android:layout_width="wrap_content"
+            <Button
+                android:id="@+id/easy_diff"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Time took:"
-                android:textSize="20dp"
-                android:layout_marginBottom="10dp"
+                android:text="Easy"
                 />
 
-            <TextView
-                android:id="@+id/time_took"
-                android:layout_width="wrap_content"
+            <Button
+                android:id="@+id/medium_diff"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="10dp"
-                android:gravity="center"
-                android:text=""
-                android:textSize="40dp"
+                android:text="Medium"
                 />
+
+            <Button
+                android:id="@+id/hard_diff"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Hard"
+                />
+
+
         </LinearLayout>
-
-        <Button
-            android:id="@+id/new_game_bttn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="New Game"
-            />
-
 
 
     </LinearLayout>

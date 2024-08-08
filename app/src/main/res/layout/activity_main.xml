@@ -39,10 +39,10 @@
                 android:padding="16dp" />
 
             <Button
-                android:id="@+id/startButton"
+                android:id="@+id/stop_timer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Start Timer"
+                android:text="Stop Timer/Endgame"
                 android:layout_gravity="center" />
 
 
