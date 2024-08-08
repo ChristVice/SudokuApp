@@ -34,16 +34,19 @@ public class difficultyselection extends AppCompatActivity {
         easyDiffBttn.setOnClickListener(view -> {
             int easyDiff = 10;
             intent.putExtra("Selected Difficulty", easyDiff);
+            intent.putExtra("Selected Difficulty Label", "Easy");
             startActivity(intent);
         });
         mediumtDiffBttn.setOnClickListener(view -> {
             int mediumDiff = 15;
             intent.putExtra("Selected Difficulty", mediumDiff);
+            intent.putExtra("Selected Difficulty Label", "Medium");
             startActivity(intent);
         });
         hardDiffBttn.setOnClickListener(view -> {
             int hardDiff = 20;
             intent.putExtra("Selected Difficulty", hardDiff);
+            intent.putExtra("Selected Difficulty Label", "Hard");
             startActivity(intent);
         });
 

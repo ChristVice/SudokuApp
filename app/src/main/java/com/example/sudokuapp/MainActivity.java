@@ -63,10 +63,17 @@ public class MainActivity extends AppCompatActivity {
         Button stopTimerBttn = findViewById(R.id.stop_timer);
 
         stopTimerBttn.setOnClickListener(view -> {
-
             stopTimer();
-
         });
+
+
+        //get the difficulty level, and set header text to match
+        Bundle extras = getIntent().getExtras();
+        TextView diffHeaderView = findViewById(R.id.difficulty_header);
+        if(extras != null){
+            difficultyLevel = extras.getInt("Selected Difficulty", 10); // Retrieve the integer value with a default of 0
+            diffHeaderView.setText(extras.getString("Selected Difficulty Label", "Easy"));
+        }
 
 
         //game matrix
@@ -120,11 +127,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        //get the difficulty level
-        Bundle extras = getIntent().getExtras();
-        if(extras != null){
-            difficultyLevel = extras.getInt("Selected Difficulty", 10); // Retrieve the integer value with a default of 0
-        }
         // Create the starting board along with concrete numbers
         createRandomSudokuStartingBoard();
 
